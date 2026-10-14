@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="nl" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Croftie's Shop - Winst & Transactie Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 h-full flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+                    <i class="fa-solid fa-store text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 leading-tight">Croftie's Shop</h1>
+                    <p class="text-xs text-slate-500">Beheer je aankopen, verkosten, onkosten en winsten</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="openModal()" class="inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-xl text-sm transition shadow-sm shadow-indigo-200 cursor-pointer">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Nieuwe Transactie</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 overflow-y-auto">
+
+        <!-- Toast Notification container -->
+        <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+            <span id="toastMessage">Actie succesvol uitgevoerd</span>
+        </div>
+
+        <!-- KPI / Summary Cards -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <!-- Totaal Geïnvesteerd -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Totaal Geïnvesteerd</p>
+                    <h3 id="kpiInvested" class="text-2xl font-bold text-slate-900 mt-1">€0,00</h3>
+                    <p class="text-xs text-slate-400 mt-1">Basis + aankoop onkosten</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+            </div>
+
+            <!-- Totaal Omzet -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Totale Omzet</p>
+                    <h3 id="kpiRevenue" class="text-2xl font-bold text-slate-900 mt-1">€0,00</h3>
+                    <p class="text-xs text-slate-400 mt-1">Verkoopprijs - verkoopkosten</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-cash-register"></i>
+                </div>
+            </div>
+
+            <!-- Totale Netto Winst -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Totale Netto Winst</p>
+                    <h3 id="kpiProfit" class="text-2xl font-bold text-emerald-600 mt-1">€0,00</h3>
+                    <p id="kpiMargin" class="text-xs text-emerald-600 font-medium mt-1">Marge: 0%</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </div>
+            </div>
+
+            <!-- Voorraad Status -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Status Artikelen</p>
+                    <div class="flex items-baseline space-x-2 mt-1">
+                        <span id="kpiSold" class="text-2xl font-bold text-slate-900">0</span>
+                        <span class="text-xs text-slate-400">verkocht</span>
+                        <span class="text-slate-300">/</span>
+                        <span id="kpiStock" class="text-xl font-semibold text-amber-600">0</span>
+                        <span class="text-xs text-slate-400">in bezit</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1">Totaal <span id="kpiTotalItems">0</span> items</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Monthly Overview Table -->
+            <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-calendar-days text-indigo-600"></i>
+                        <span>Maandoverzicht (Verkoopmaand)</span>
+                    </h2>
+                    <span class="text-xs text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">Croftie's Shop Cijfers</span>
+                </div>
+                <div class="overflow-x-auto flex-1">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-slate-400 text-xs uppercase tracking-wider font-semibold">
+                                <th class="py-3 px-3">Maand</th>
+                                <th class="py-3 px-3">Verkochte Items</th>
+                                <th class="py-3 px-3">Omzet</th>
+                                <th class="py-3 px-3">Inkoopkosten</th>
+                                <th class="py-3 px-3 text-right">Netto Winst</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthlyTableBody" class="divide-y divide-slate-100 text-slate-700">
+                            <!-- Dynamically filled -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Yearly Overview Card -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-calendar text-indigo-600"></i>
+                        <span>Jaaroverzicht</span>
+                    </h2>
+                </div>
+                <div class="overflow-y-auto max-h-[300px] flex-1 pr-1">
+                    <div id="yearlyContainer" class="space-y-3">
+                        <!-- Dynamically filled -->
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-slate-100">
+                    <div class="bg-indigo-50/60 rounded-xl p-3.5 flex items-center justify-between text-xs text-indigo-900">
+                        <span class="font-medium">Totale Winst All-Time:</span>
+                        <span id="allTimeProfit" class="font-bold text-base text-indigo-700">€0,00</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-list-check text-indigo-600"></i>
+                        <span>Transactieoverzicht</span>
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Overzicht van al je aankopen, verkopen en onkosten</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Search input -->
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        </span>
+                        <input type="text" id="searchInput" oninput="renderTransactions()" placeholder="Zoek op item..." class="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl pl-9 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-48 sm:w-64">
+                    </div>
+                    <!-- Status filter tabs -->
+                    <div class="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-medium">
+                        <button onclick="setFilter('all')" id="filterBtn-all" class="px-3 py-1.5 rounded-lg transition bg-white text-slate-900 shadow-xs cursor-pointer">Alles</button>
+                        <button onclick="setFilter('in_stock')" id="filterBtn-in_stock" class="px-3 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900 cursor-pointer">In bezit</button>
+                        <button onclick="setFilter('sold')" id="filterBtn-sold" class="px-3 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900 cursor-pointer">Verkocht</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-100 text-slate-400 text-xs uppercase tracking-wider font-semibold">
+                            <th class="py-3 px-3">Item / Product</th>
+                            <th class="py-3 px-3">Aankoop Datum</th>
+                            <th class="py-3 px-3">Totale Aankoop + Kosten</th>
+                            <th class="py-3 px-3">Verkoop Datum</th>
+                            <th class="py-3 px-3">Netto Omzet - Kosten</th>
+                            <th class="py-3 px-3">Netto Winst / Marge</th>
+                            <th class="py-3 px-3">Status</th>
+                            <th class="py-3 px-3 text-right">Acties</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTableBody" class="divide-y divide-slate-100 text-slate-700">
+                        <!-- Dynamically populated -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden py-12 text-center">
+                <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <p class="text-slate-600 font-medium">Geen transacties gevonden</p>
+                <p class="text-slate-400 text-xs mt-1">Voeg je eerste item toe via de knop rechtsboven.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="transactionModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl transform scale-95 transition-transform duration-200 max-h-[90vh] overflow-y-auto" id="modalContainer">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <h3 id="modalTitle" class="text-lg font-bold text-slate-900">Nieuwe Transactie Toevoegen</h3>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <form id="transactionForm" onsubmit="handleFormSubmit(event)" class="space-y-5 pt-4">
+                <input type="hidden" id="editId">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Productnaam / Item *</label>
+                    <input type="text" id="itemName" required placeholder="Bijv. Sneaker Loterij of Vintage Jas" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Aankoop Sectie -->
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 space-y-4">
+                        <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-1.5">
+                            <i class="fa-solid fa-cart-shopping text-blue-600"></i>
+                            <span>Aankoopgegevens</span>
+                        </h4>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Aankoopdatum *</label>
+                            <input type="date" id="purchaseDate" required class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Aankoopprijs (€) *</label>
+                            <input type="number" step="0.01" min="0" id="purchasePrice" required placeholder="0.00" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Aankoop Onkosten (€) <span class="text-slate-400 font-normal">(verplaatsing, verzending)</span></label>
+                            <input type="number" step="0.01" min="0" id="purchaseCosts" value="0" placeholder="0.00" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- Verkoop Sectie -->
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 space-y-4">
+                        <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-1.5">
+                            <i class="fa-solid fa-tag text-emerald-600"></i>
+                            <span>Verkoopgegevens <span class="font-normal text-slate-400">(optioneel)</span></span>
+                        </h4>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Verkoopdatum</label>
+                            <input type="date" id="saleDate" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Verkoopprijs (€)</label>
+                            <input type="number" step="0.01" min="0" id="salePrice" placeholder="0.00" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Verkoop Onkosten (€) <span class="text-slate-400 font-normal">(verzending, platform)</span></label>
+                            <input type="number" step="0.01" min="0" id="saleCosts" value="0" placeholder="0.00" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Notities / Extra Info <span class="font-normal text-slate-400">(optioneel)</span></label>
+                    <textarea id="notes" rows="2" placeholder="Bijv. Gekocht op beurs, verzonden via bpost..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeModal()" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium text-sm transition cursor-pointer">Annuleren</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm transition shadow-sm shadow-indigo-200 cursor-pointer">Opslaan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // State Management & LocalStorage Initialization for Croftie's Shop
+        let transactions = JSON.parse(localStorage.getItem('crofties_shop_transactions')) || [
+            {
+                id: '1',
+                name: 'Retro Gameboy Color',
+                purchaseDate: '2026-01-15',
+                purchasePrice: 35.00,
+                purchaseCosts: 5.50, // verplaatsing/benzine
+                saleDate: '2026-02-10',
+                salePrice: 85.00,
+                saleCosts: 6.75, // verzendkosten
+                notes: 'Inclusief Pokémon Blue.'
+            },
+            {
+                id: '2',
+                name: 'Designer Vaas',
+                purchaseDate: '2026-02-01',
+                purchasePrice: 20.00,
+                purchaseCosts: 4.00,
+                saleDate: '2026-02-28',
+                salePrice: 65.00,
+                saleCosts: 7.00, // verzendkosten
+                notes: 'Prachtige staat.'
+            },
+            {
+                id: '3',
+                name: 'Vintage Stoel',
+                purchaseDate: '2026-03-10',
+                purchasePrice: 40.00,
+                purchaseCosts: 10.00, // ophaalkosten
+                saleDate: '',
+                salePrice: null,
+                saleCosts: 0,
+                notes: 'Wordt klaargemaakt voor verkoop.'
+            }
+        ];
+
+        let currentFilter = 'all';
+
+        // Format currency helper
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount);
+        }
+
+        // Format date helper
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('nl-NL', options);
+        }
+
+        // Save to LocalStorage
+        function saveToStorage() {
+            localStorage.setItem('crofties_shop_transactions', JSON.stringify(transactions));
+        }
+
+        // Toast notification helper
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toastMessage');
+            const iconEl = document.getElementById('toastIcon');
+            
+            msgEl.textContent = message;
+            if (isError) {
+                iconEl.className = 'fa-solid fa-circle-exclamation text-rose-400';
+            } else {
+                iconEl.className = 'fa-solid fa-circle-check text-emerald-400';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Modal Controls
+        function openModal(editId = null) {
+            const modal = document.getElementById('transactionModal');
+            const container = document.getElementById('modalContainer');
+            const title = document.getElementById('modalTitle');
+            const form = document.getElementById('transactionForm');
+
+            form.reset();
+            document.getElementById('editId').value = '';
+
+            if (editId) {
+                title.textContent = 'Transactie Bewerken';
+                const item = transactions.find(t => t.id === editId);
+                if (item) {
+                    document.getElementById('editId').value = item.id;
+                    document.getElementById('itemName').value = item.name;
+                    document.getElementById('purchaseDate').value = item.purchaseDate;
+                    document.getElementById('purchasePrice').value = item.purchasePrice;
+                    document.getElementById('purchaseCosts').value = item.purchaseCosts;
+                    document.getElementById('saleDate').value = item.saleDate || '';
+                    document.getElementById('salePrice').value = item.salePrice !== null ? item.salePrice : '';
+                    document.getElementById('saleCosts').value = item.saleCosts || 0;
+                    document.getElementById('notes').value = item.notes || '';
+                }
+            } else {
+                title.textContent = 'Nieuwe Transactie Toevoegen';
+                document.getElementById('purchaseDate').value = new Date().toISOString().split('T')[0];
+            }
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-95');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('transactionModal');
+            const container = document.getElementById('modalContainer');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            container.classList.add('scale-95');
+        }
+
+        // Form Submit Handler
+        function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const editId = document.getElementById('editId').value;
+            const name = document.getElementById('itemName').value.trim();
+            const purchaseDate = document.getElementById('purchaseDate').value;
+            const purchasePrice = parseFloat(document.getElementById('purchasePrice').value) || 0;
+            const purchaseCosts = parseFloat(document.getElementById('purchaseCosts').value) || 0;
+            const saleDate = document.getElementById('saleDate').value;
+            const salePriceInput = document.getElementById('salePrice').value;
+            const salePrice = salePriceInput !== '' ? parseFloat(salePriceInput) : null;
+            const saleCosts = parseFloat(document.getElementById('saleCosts').value) || 0;
+            const notes = document.getElementById('notes').value.trim();
+
+            if (salePrice !== null && salePrice > 0 && !saleDate) {
+                showToast('Vul een verkoopdatum in wanneer er een verkoopprijs is opgegeven.', true);
+                return;
+            }
+
+            const transactionData = {
+                id: editId ? editId : Date.now().toString(),
+                name,
+                purchaseDate,
+                purchasePrice,
+                purchaseCosts,
+                saleDate: (salePrice !== null && salePrice > 0) ? saleDate : '',
+                salePrice: (salePrice !== null && salePrice > 0) ? salePrice : null,
+                saleCosts: (salePrice !== null && salePrice > 0) ? saleCosts : 0,
+                notes
+            };
+
+            if (editId) {
+                const index = transactions.findIndex(t => t.id === editId);
+                if (index !== -1) {
+                    transactions[index] = transactionData;
+                    showToast('Transactie bijgewerkt in Croftie\'s Shop!');
+                }
+            } else {
+                transactions.unshift(transactionData);
+                showToast('Nieuwe transactie toegevoegd aan Croftie\'s Shop!');
+            }
+
+            saveToStorage();
+            closeModal();
+            refreshDashboard();
+        }
+
+        // Delete Transaction
+        function deleteTransaction(id) {
+            if (confirm('Weet je zeker dat je deze transactie wilt verwijderen?')) {
+                transactions = transactions.filter(t => t.id !== id);
+                saveToStorage();
+                refreshDashboard();
+                showToast('Transactie verwijderd.');
+            }
+        }
+
+        // Set filter tab
+        function setFilter(filterType) {
+            currentFilter = filterType;
+            ['all', 'in_stock', 'sold'].forEach(f => {
+                const btn = document.getElementById(`filterBtn-${f}`);
+                if (f === filterType) {
+                    btn.className = 'px-3 py-1.5 rounded-lg transition bg-white text-slate-900 shadow-xs cursor-pointer';
+                } else {
+                    btn.className = 'px-3 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900 cursor-pointer';
+                }
+            });
+            renderTransactions();
+        }
+
+        function refreshDashboard() {
+            renderKPIs();
+            renderTransactions();
+            renderMonthlyOverview();
+            renderYearlyOverview();
+        }
+
+        // Calculate metrics for a single transaction
+        function calcTransaction(t) {
+            const totalPurchase = t.purchasePrice + t.purchaseCosts;
+            const isSold = t.salePrice !== null && t.salePrice > 0;
+            const totalRevenue = isSold ? (t.salePrice - t.saleCosts) : 0;
+            const netProfit = isSold ? (totalRevenue - totalPurchase) : 0;
+            const margin = (isSold && totalPurchase > 0) ? (netProfit / totalPurchase) * 100 : 0;
+            return { totalPurchase, isSold, totalRevenue, netProfit, margin };
+        }
+
+        // Render KPI Cards
+        function renderKPIs() {
+            let totalInvested = 0;
+            let totalRevenueAll = 0;
+            let totalProfitAll = 0;
+            let soldCount = 0;
+            let stockCount = 0;
+
+            transactions.forEach(t => {
+                const calc = calcTransaction(t);
+                totalInvested += calc.totalPurchase;
+                if (calc.isSold) {
+                    totalRevenueAll += calc.totalRevenue;
+                    totalProfitAll += calc.netProfit;
+                    soldCount++;
+                } else {
+                    stockCount++;
+                }
+            });
+
+            const overallMargin = totalInvested > 0 ? (totalProfitAll / (transactions.filter(t => calcTransaction(t).isSold).reduce((acc, t) => acc + calcTransaction(t).totalPurchase, 0) || 1)) * 100 : 0;
+
+            document.getElementById('kpiInvested').textContent = formatCurrency(totalInvested);
+            document.getElementById('kpiRevenue').textContent = formatCurrency(totalRevenueAll);
+            
+            const profitEl = document.getElementById('kpiProfit');
+            profitEl.textContent = formatCurrency(totalProfitAll);
+            profitEl.className = `text-2xl font-bold mt-1 ${totalProfitAll >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+
+            const marginEl = document.getElementById('kpiMargin');
+            marginEl.textContent = `Netto Marge: ${overallMargin.toFixed(1)}%`;
+
+            document.getElementById('kpiSold').textContent = soldCount;
+            document.getElementById('kpiStock').textContent = stockCount;
+            document.getElementById('kpiTotalItems').textContent = transactions.length;
+            document.getElementById('allTimeProfit').textContent = formatCurrency(totalProfitAll);
+        }
+
+        // Render Transactions Table
+        function renderTransactions() {
+            const tbody = document.getElementById('transactionsTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            tbody.innerHTML = '';
+
+            const filtered = transactions.filter(t => {
+                const matchesSearch = t.name.toLowerCase().includes(searchTerm) || (t.notes && t.notes.toLowerCase().includes(searchTerm));
+                const calc = calcTransaction(t);
+                if (currentFilter === 'in_stock') return matchesSearch && !calc.isSold;
+                if (currentFilter === 'sold') return matchesSearch && calc.isSold;
+                return matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            filtered.forEach(t => {
+                const calc = calcTransaction(t);
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition';
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-3">
+                        <div class="font-semibold text-slate-900">${escapeHtml(t.name)}</div>
+                        ${t.notes ? `<div class="text-xs text-slate-400 truncate max-w-xs">${escapeHtml(t.notes)}</div>` : ''}
+                    </td>
+                    <td class="py-3.5 px-3 text-xs text-slate-600">
+                        <div>${formatDate(t.purchaseDate)}</div>
+                    </td>
+                    <td class="py-3.5 px-3">
+                        <div class="font-medium text-slate-900">${formatCurrency(calc.totalPurchase)}</div>
+                        <div class="text-xs text-slate-400">Prijs: ${formatCurrency(t.purchasePrice)} + Onkosten: ${formatCurrency(t.purchaseCosts)}</div>
+                    </td>
+                    <td class="py-3.5 px-3 text-xs text-slate-600">
+                        <div>${calc.isSold ? formatDate(t.saleDate) : '<span class="text-amber-600 font-medium">Nog in bezit</span>'}</div>
+                    </td>
+                    <td class="py-3.5 px-3">
+                        ${calc.isSold ? `
+                            <div class="font-medium text-slate-900">${formatCurrency(calc.totalRevenue)}</div>
+                            <div class="text-xs text-slate-400">Verkoop: ${formatCurrency(t.salePrice)} - Kosten: ${formatCurrency(t.saleCosts)}</div>
+                        ` : '<span class="text-xs text-slate-400">-</span>'}
+                    </td>
+                    <td class="py-3.5 px-3">
+                        ${calc.isSold ? `
+                            <div class="font-bold ${calc.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatCurrency(calc.netProfit)}</div>
+                            <div class="text-xs text-slate-400">${calc.margin.toFixed(1)}% marge</div>
+                        ` : '<span class="text-xs text-slate-400">-</span>'}
+                    </td>
+                    <td class="py-3.5 px-3">
+                        ${calc.isSold ? 
+                            '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">Verkocht</span>' : 
+                            '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">In bezit</span>'
+                        }
+                    </td>
+                    <td class="py-3.5 px-3 text-right space-x-1">
+                        <button onclick="openModal('${t.id}')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 transition inline-flex items-center justify-center cursor-pointer" title="Bewerken">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button onclick="deleteTransaction('${t.id}')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 transition inline-flex items-center justify-center cursor-pointer" title="Verwijderen">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Render Monthly Overview
+        function renderMonthlyOverview() {
+            const tbody = document.getElementById('monthlyTableBody');
+            tbody.innerHTML = '';
+
+            const monthlyData = {};
+
+            transactions.forEach(t => {
+                const calc = calcTransaction(t);
+                if (calc.isSold && t.saleDate) {
+                    const monthKey = t.saleDate.substring(0, 7); // YYYY-MM
+                    if (!monthlyData[monthKey]) {
+                        monthlyData[monthKey] = { count: 0, revenue: 0, costs: 0, profit: 0 };
+                    }
+                    monthlyData[monthKey].count += 1;
+                    monthlyData[monthKey].revenue += calc.totalRevenue;
+                    monthlyData[monthKey].costs += calc.totalPurchase;
+                    monthlyData[monthKey].profit += calc.netProfit;
+                }
+            });
+
+            const sortedMonths = Object.keys(monthlyData).sort().reverse();
+
+            if (sortedMonths.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400 text-xs">Geen verkoopgegevens per maand beschikbaar.</td></tr>`;
+                return;
+            }
+
+            const monthNames = {
+                '01': 'Januari', '02': 'Februari', '03': 'Maart', '04': 'April',
+                '05': 'Mei', '06': 'Juni', '07': 'Juli', '08': 'Augustus',
+                '09': 'September', '10': 'Oktober', '11': 'November', '12': 'December'
+            };
+
+            sortedMonths.forEach(mKey => {
+                const [year, monthNum] = mKey.split('-');
+                const monthName = monthNames[monthNum] || monthNum;
+                const data = monthlyData[mKey];
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition';
+                tr.innerHTML = `
+                    <td class="py-3 px-3 font-semibold text-slate-900">${monthName} ${year}</td>
+                    <td class="py-3 px-3">${data.count} items</td>
+                    <td class="py-3 px-3 font-medium text-slate-800">${formatCurrency(data.revenue)}</td>
+                    <td class="py-3 px-3 text-slate-500">${formatCurrency(data.costs)}</td>
+                    <td class="py-3 px-3 text-right font-bold ${data.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatCurrency(data.profit)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Render Yearly Overview
+        function renderYearlyOverview() {
+            const container = document.getElementById('yearlyContainer');
+            container.innerHTML = '';
+
+            const yearlyData = {};
+
+            transactions.forEach(t => {
+                const calc = calcTransaction(t);
+                if (calc.isSold && t.saleDate) {
+                    const year = t.saleDate.substring(0, 4);
+                    if (!yearlyData[year]) {
+                        yearlyData[year] = { count: 0, revenue: 0, profit: 0, invested: 0 };
+                    }
+                    yearlyData[year].count += 1;
+                    yearlyData[year].revenue += calc.totalRevenue;
+                    yearlyData[year].profit += calc.netProfit;
+                    yearlyData[year].invested += calc.totalPurchase;
+                }
+            });
+
+            const sortedYears = Object.keys(yearlyData).sort().reverse();
+
+            if (sortedYears.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Geen jaaroverzicht beschikbaar.</p>`;
+                return;
+            }
+
+            sortedYears.forEach(year => {
+                const data = yearlyData[year];
+                const card = document.createElement('div');
+                card.className = 'bg-slate-50 border border-slate-200/70 rounded-xl p-4 flex items-center justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-slate-900 text-sm">${year}</span>
+                            <span class="text-xs bg-slate-200/70 text-slate-600 px-2 py-0.5 rounded-md font-medium">${data.count} verkocht</span>
+                        </div>
+                        <div class="text-xs text-slate-500 mt-1">Omzet: <span class="font-medium text-slate-700">${formatCurrency(data.revenue)}</span></div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Netto Winst</div>
+                        <div class="font-bold text-base ${data.profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatCurrency(data.profit)}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // HTML Escape helper
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Initial load
+        window.onload = function() {
+            refreshDashboard();
+        };
+    </script>
+</body>
+</html>
